@@ -16,10 +16,16 @@ cloudfront_response_headers_policy = aws.cloudfront.get_response_headers_policy(
     name="Managed-SimpleCORS",
 )
 
-# Define an S3 origin
+# Define an S3 static website origin
 s3_origin = aws.cloudfront.DistributionOriginArgs(
-    domain_name="test-bucket-pulumi-1.s3.amazonaws.com",
-    origin_id="s3-origin",
+    domain_name="test-bucket-pulumi-1.s3-website.ap-south-1.amazonaws.com",
+    origin_id="test-bucket-pulumi-1.s3-website.ap-south-1.amazonaws.com",
+    custom_origin_config={
+        "http_port": 80,
+        "https_port": 443,
+        "origin_protocol_policy": "http-only",  # or "https-only" or "match-viewer"
+        "origin_ssl_protocols": ["TLSv1", "TLSv1.1", "TLSv1.2"],
+    },
 )
 
 # Create CloudFront Distribution
@@ -42,7 +48,9 @@ cf_s3_distribution = aws.cloudfront.Distribution(
     origins=[s3_origin],
     price_class="PriceClass_All",
     restrictions={"geoRestriction": {"restrictionType": "none"}},
-    tags={"Environment": "pulumi-test"},
+    tags={
+        "Description": "pulumi-test",
+    },
     viewer_certificate={"cloudfrontDefaultCertificate": True},
 )
 
@@ -53,3 +61,4 @@ pulumi.export('cf_domain_name', cf_s3_distribution.domain_name)
 # Set up a Pulumi stack
 stack = pulumi.get_stack()
 pulumi.export('stack_name', stack)
+
